@@ -30,6 +30,17 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (formData.password.length < 8) {
+      alert("Password must be at least 8 characters long")
+      return
+    }
+
+    if (formData.password !== formData.confirmPassword) {
+      alert("Passwords do not match")
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -38,8 +49,20 @@ export default function SignUpPage() {
       // Handle sign up logic here
       console.log("Sign up:", formData)
 
-      // Redirect to dashboard after successful signup
-      router.push("/dashboard")
+      // Set signed in state
+      localStorage.setItem("isSignedIn", "true")
+      localStorage.setItem("userEmail", formData.email)
+      localStorage.setItem("userName", `${formData.firstName} ${formData.lastName}`)
+
+      const redirectAfterSignup = localStorage.getItem("redirectAfterSignup")
+      localStorage.removeItem("redirectAfterSignup")
+
+      // Redirect to invest page if came from investment button, otherwise dashboard
+      if (redirectAfterSignup === "invest-page") {
+        router.push("/invest-amount")
+      } else {
+        router.push("/dashboard")
+      }
     } catch (error) {
       console.error("Sign up error:", error)
     } finally {
@@ -116,10 +139,11 @@ export default function SignUpPage() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Create a strong password"
+                    placeholder="Create a strong password (min. 8 characters)"
                     value={formData.password}
                     onChange={(e) => handleInputChange("password", e.target.value)}
                     disabled={isLoading}
+                    minLength={8}
                     required
                   />
                   <Button
@@ -132,6 +156,7 @@ export default function SignUpPage() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground">Password must be at least 8 characters</p>
               </div>
 
               <div className="space-y-2">
@@ -144,6 +169,7 @@ export default function SignUpPage() {
                     value={formData.confirmPassword}
                     onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                     disabled={isLoading}
+                    minLength={8}
                     required
                   />
                   <Button

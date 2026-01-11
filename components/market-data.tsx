@@ -22,25 +22,38 @@ const topStocks = [
 
 export function MarketData() {
   return (
-    <section className="py-16 bg-muted/30">
-      <div className="container">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">Live Market Data</h2>
+    <section className="py-16 bg-muted/30 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-accent/5 to-transparent pointer-events-none" />
+
+      <div className="container relative">
+        <div className="text-center mb-12 animate-fade-in-down">
+          <h2 className="text-3xl font-bold mb-4 bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            Live Market Data
+          </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
             Stay updated with real-time market movements and trending stocks.
           </p>
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {marketData.map((index) => (
-            <Card key={index.symbol}>
+          {marketData.map((index, idx) => (
+            <Card
+              key={index.symbol}
+              className="transition-smooth hover-lift hover-glow cursor-pointer animate-fade-in-up group"
+              style={{ animationDelay: `${idx * 0.1}s` }}
+            >
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium">{index.symbol}</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{index.value.toLocaleString()}</div>
+                <div className="text-2xl font-bold group-hover:text-accent transition-smooth">
+                  {index.value.toLocaleString()}
+                </div>
                 <div className="flex items-center justify-between mt-2">
-                  <Badge variant={index.change >= 0 ? "default" : "destructive"} className="text-xs">
+                  <Badge
+                    variant={index.change >= 0 ? "default" : "destructive"}
+                    className="text-xs transition-smooth hover:scale-105"
+                  >
                     {index.change >= 0 ? (
                       <TrendingUp className="h-3 w-3 mr-1" />
                     ) : (
@@ -56,20 +69,24 @@ export function MarketData() {
           ))}
         </div>
 
-        <Card>
+        <Card className="transition-smooth hover-lift hover-glow animate-fade-in-up group">
           <CardHeader>
             <CardTitle>Top Performers</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {topStocks.map((stock) => (
-                <div key={stock.symbol} className="flex items-center justify-between p-4 border rounded-lg">
+              {topStocks.map((stock, idx) => (
+                <div
+                  key={stock.symbol}
+                  className="flex items-center justify-between p-4 border rounded-lg transition-smooth hover-lift hover-scale cursor-pointer animate-fade-in-up group"
+                  style={{ animationDelay: `${idx * 0.05}s` }}
+                >
                   <div>
                     <div className="font-semibold">{stock.symbol}</div>
                     <div className="text-sm text-muted-foreground">Cap: {stock.marketCap}</div>
                   </div>
                   <div className="text-right">
-                    <div className="font-medium">${stock.price}</div>
+                    <div className="font-medium group-hover:text-accent transition-smooth">${stock.price}</div>
                     <Badge variant={stock.change >= 0 ? "default" : "destructive"} className="text-xs">
                       {stock.change >= 0 ? "+" : ""}
                       {stock.change}%

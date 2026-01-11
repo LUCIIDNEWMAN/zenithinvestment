@@ -29,11 +29,11 @@ export default function AboutPage() {
   const milestones = [
     { year: "2018", event: "ZENITH founded with $10M seed funding" },
     { year: "2019", event: "Launched first AI-powered investment strategies" },
-    { year: "2020", event: "Reached $100M in assets under management" },
+    { year: "2020", event: "Reached $100K in assets under management" },
     { year: "2021", event: "Expanded to international markets" },
-    { year: "2022", event: "Achieved $1B+ AUM milestone" },
+    { year: "2022", event: "Achieved $500K AUM milestone" },
     { year: "2023", event: "Launched retail investment platform" },
-    { year: "2024", event: "Surpassed $2.4B in assets under management" },
+    { year: "2024", event: "Surpassed $1M in assets under management" },
   ]
 
   return (

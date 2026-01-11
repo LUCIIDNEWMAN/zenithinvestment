@@ -13,8 +13,10 @@ import { TrendingUp, Eye, EyeOff } from "lucide-react"
 import { LoadingButton } from "@/components/loading-button"
 import { LoadingOverlay } from "@/components/loading-overlay"
 import { Toast, useToast } from "@/components/toast-notification"
+import { useRouter } from "next/navigation"
 
 export default function SignInPage() {
+  const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
@@ -23,6 +25,12 @@ export default function SignInPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    if (password.length < 8) {
+      showToast("error", "Password must be at least 8 characters long")
+      return
+    }
+
     setIsLoading(true)
 
     try {
@@ -30,7 +38,16 @@ export default function SignInPage() {
       await new Promise((resolve) => setTimeout(resolve, 2000))
       // Handle sign in logic here
       console.log("Sign in:", { email, password })
+
+      // Set signed in state
+      localStorage.setItem("isSignedIn", "true")
+      localStorage.setItem("userEmail", email)
+
       showToast("success", "Successfully signed in! Redirecting to dashboard...")
+
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 1500)
     } catch (error) {
       console.error("Sign in error:", error)
       showToast("error", "Failed to sign in. Please check your credentials.")
@@ -80,10 +97,11 @@ export default function SignInPage() {
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
+                    placeholder="Enter your password (min. 8 characters)"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isLoading}
+                    minLength={8}
                     required
                   />
                   <Button
@@ -96,6 +114,7 @@ export default function SignInPage() {
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
+                <p className="text-xs text-muted-foreground">Password must be at least 8 characters</p>
               </div>
 
               <div className="flex items-center justify-between">
