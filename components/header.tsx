@@ -91,15 +91,15 @@ export function Header() {
           : "border-b/0 bg-background/50 backdrop-blur supports-[backdrop-filter]:bg-background/40"
       }`}
     >
-      <div className="container flex h-16 items-center justify-between">
-        <div className="flex items-center space-x-4">
+      <div className="container flex h-14 sm:h-16 items-center justify-between px-3 sm:px-6">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           <div
             onClick={handleLogoClick}
             className={`flex items-center space-x-2 group ${isSignedIn ? "cursor-pointer" : ""}`}
           >
             <Link href="/" className="flex items-center space-x-2 group">
-              <TrendingUp className="h-8 w-8 text-primary transition-smooth group-hover:scale-110 group-hover:text-accent" />
-              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent transition-smooth group-hover:from-accent group-hover:to-primary">
+              <TrendingUp className="h-6 sm:h-8 w-6 sm:w-8 text-primary transition-smooth group-hover:scale-110 group-hover:text-accent" />
+              <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent transition-smooth group-hover:from-accent group-hover:to-primary hidden sm:inline">
                 ZENITH
               </span>
             </Link>
@@ -111,26 +111,26 @@ export function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className="text-sm font-medium px-4 py-2 rounded-lg transition-smooth hover:bg-accent/10 hover:text-accent"
+              className="text-sm font-medium px-3 lg:px-4 py-2 rounded-lg transition-smooth hover:bg-accent/10 hover:text-accent"
             >
               {item.label}
             </Link>
           ))}
         </nav>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
           {isSignedIn ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hidden md:flex transition-smooth hover-scale hover:bg-accent/10"
+                  className="hidden md:flex h-9 w-9 sm:h-10 sm:w-10 transition-smooth hover-scale hover:bg-accent/10"
                 >
-                  <User className="h-5 w-5" />
+                  <User className="h-4 sm:h-5 w-4 sm:w-5" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 animate-scale-in">
+              <DropdownMenuContent align="end" className="w-48 sm:w-56 animate-scale-in">
                 <DropdownMenuItem className="transition-smooth hover:bg-accent/10 cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
                   Profile Settings
@@ -163,14 +163,17 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="hidden md:flex transition-smooth hover-scale hover:bg-accent/10"
+                className="hidden md:flex h-9 w-9 sm:h-10 sm:w-10 transition-smooth hover-scale hover:bg-accent/10"
                 asChild
               >
                 <Link href="/signin">
-                  <User className="h-5 w-5" />
+                  <User className="h-4 sm:h-5 w-4 sm:w-5" />
                 </Link>
               </Button>
-              <Button asChild className="hidden md:flex transition-smooth hover-lift">
+              <Button
+                asChild
+                className="hidden md:flex text-xs sm:text-base px-3 sm:px-4 py-2 transition-smooth hover-lift h-9 sm:h-10"
+              >
                 <Link href="/signup">Get Started</Link>
               </Button>
             </>
@@ -178,18 +181,18 @@ export function Header() {
 
           <Sheet open={isOpen} onOpenChange={setIsOpen}>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden transition-smooth hover-scale">
+              <Button variant="ghost" size="icon" className="md:hidden h-9 w-9 transition-smooth hover-scale">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right">
+            <SheetContent side="right" className="w-[250px]">
               <nav className="flex flex-col space-y-4 mt-8">
                 {navItems.map((item) => (
                   <Link
                     key={item.href}
                     href={item.href}
                     onClick={() => setIsOpen(false)}
-                    className="transition-smooth hover:text-accent"
+                    className="transition-smooth hover:text-accent text-base"
                   >
                     {item.label}
                   </Link>
@@ -199,21 +202,21 @@ export function Header() {
                     <Link
                       href="/deposit"
                       onClick={() => setIsOpen(false)}
-                      className="transition-smooth hover:text-accent"
+                      className="transition-smooth hover:text-accent text-base"
                     >
                       Deposit Funds
                     </Link>
                     <Link
                       href="/withdraw"
                       onClick={() => setIsOpen(false)}
-                      className="transition-smooth hover:text-accent"
+                      className="transition-smooth hover:text-accent text-base"
                     >
                       Withdraw Funds
                     </Link>
                   </>
                 )}
                 {!isSignedIn && (
-                  <Button asChild className="mt-4 transition-smooth hover-lift">
+                  <Button asChild className="mt-4 transition-smooth hover-lift w-full">
                     <Link href="/signup">Get Started</Link>
                   </Button>
                 )}
@@ -221,7 +224,7 @@ export function Header() {
                   <Button
                     variant="outline"
                     onClick={handleSignOut}
-                    className="mt-4 transition-smooth hover-lift bg-transparent"
+                    className="mt-4 transition-smooth hover-lift w-full bg-transparent"
                   >
                     Sign Out
                   </Button>
