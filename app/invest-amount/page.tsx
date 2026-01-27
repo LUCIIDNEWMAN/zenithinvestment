@@ -149,7 +149,7 @@ export default function InvestAmountPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">${currentBalance.toLocaleString()}</div>
+                <div className="text-3xl font-bold text-green-600">${currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 <p className="text-sm text-muted-foreground">Ready to invest</p>
               </CardContent>
             </Card>
