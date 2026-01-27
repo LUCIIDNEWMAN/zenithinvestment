@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Menu, TrendingUp, User, Settings, LogOut, Plus, Minus } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { signOut, isAuthenticated } from "@/lib/auth-local"
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -23,15 +23,10 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [currentPath, setCurrentPath] = useState("")
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
-    // Check if user is signed in via Supabase
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setIsSignedIn(!!user)
-    }
-    checkAuth()
+    // Check if user is signed in
+    setIsSignedIn(isAuthenticated())
 
     // Get current path
     setCurrentPath(window.location.pathname)
@@ -40,23 +35,16 @@ export function Header() {
       setIsScrolled(window.scrollY > 10)
     }
     window.addEventListener("scroll", handleScroll)
-    
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setIsSignedIn(!!session?.user)
-    })
 
     return () => {
       window.removeEventListener("scroll", handleScroll)
-      subscription.unsubscribe()
     }
-  }, [supabase.auth])
+  }, [])
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
+    await signOut()
     setIsSignedIn(false)
-    router.push("/")
-    router.refresh()
+    window.location.href = "/"
   }
 
   const handleLogoClick = (e: React.MouseEvent) => {

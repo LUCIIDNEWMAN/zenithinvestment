@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import { createClient } from '@supabase/supabase-js'
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
@@ -12,11 +12,14 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TrendingUp, Eye, EyeOff, Loader2 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { signUp } from "@/lib/auth-local"
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_KEY
+const supabase = createClient(supabaseUrl!, supabaseKey!)
 
 export default function SignUpPage() {
   const router = useRouter()
-  const supabase = createClient()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -50,26 +53,20 @@ export default function SignUpPage() {
     try {
       const fullName = `${formData.firstName} ${formData.lastName}`
       
-      const { data, error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
-          data: {
-            full_name: fullName,
-            referral_code: formData.referralCode || null,
-          },
-        },
-      })
+      const { user, error: signUpError } = await signUp(
+        formData.email,
+        formData.password,
+        fullName,
+        formData.referralCode
+      )
 
       if (signUpError) {
         setError(signUpError.message)
+        setIsLoading(false)
         return
       }
 
-      if (data.user) {
-        console.log("[v0] Sign up successful, user:", data.user.id)
-        
+      if (user) {
         // Store referral code if provided for the trigger to process
         if (formData.referralCode) {
           localStorage.setItem("usedReferralCode", formData.referralCode)
@@ -89,7 +86,6 @@ export default function SignUpPage() {
     } catch (err) {
       console.error("Sign up error:", err)
       setError("An unexpected error occurred. Please try again.")
-    } finally {
       setIsLoading(false)
     }
   }

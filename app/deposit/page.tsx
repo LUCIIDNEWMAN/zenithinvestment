@@ -9,11 +9,10 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Copy, QrCode, ArrowLeft, CheckCircle, AlertTriangle, Wallet, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
+import { isAuthenticated } from "@/lib/auth-local"
 
 export default function DepositPage() {
   const router = useRouter()
-  const supabase = createClient()
   const [copied, setCopied] = useState(false)
   const [showQR, setShowQR] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -22,22 +21,13 @@ export default function DepositPage() {
   const depositAddress = "TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE"
 
   useEffect(() => {
-    // Check Supabase authentication
-    const checkAuth = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-          router.push("/signin")
-        } else {
-          setIsLoading(false)
-        }
-      } catch (error) {
-        console.error("Auth check error:", error)
-        router.push("/signin")
-      }
+    // Check authentication
+    if (!isAuthenticated()) {
+      router.push("/signin")
+    } else {
+      setIsLoading(false)
     }
-    checkAuth()
-  }, [router, supabase.auth])
+  }, [router])
 
   const copyAddress = () => {
     navigator.clipboard.writeText(depositAddress)

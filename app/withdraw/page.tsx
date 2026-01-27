@@ -11,11 +11,10 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowLeft, Wallet, AlertTriangle, DollarSign, CheckCircle, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
+import { isAuthenticated } from "@/lib/auth-local"
 
 export default function WithdrawPage() {
   const router = useRouter()
-  const supabase = createClient()
   const [withdrawData, setWithdrawData] = useState({
     address: "",
     amount: "",
@@ -23,7 +22,6 @@ export default function WithdrawPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
-  const [isLoading, setIsLoading] = useState(false) // Declare isLoading variable
 
   const currentBalance = 1549.33
   const minWithdraw = 20
@@ -31,22 +29,13 @@ export default function WithdrawPage() {
   const networkFee = 1.5
 
   useEffect(() => {
-    // Check Supabase authentication
-    const checkAuth = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user) {
-          router.push("/signin")
-        } else {
-          setIsCheckingAuth(false)
-        }
-      } catch (error) {
-        console.error("Auth check error:", error)
-        router.push("/signin")
-      }
+    // Check authentication
+    if (!isAuthenticated()) {
+      router.push("/signin")
+    } else {
+      setIsCheckingAuth(false)
     }
-    checkAuth()
-  }, [router, supabase.auth])
+  }, [router])
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {}

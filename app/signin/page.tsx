@@ -14,11 +14,10 @@ import { LoadingButton } from "@/components/loading-button"
 import { LoadingOverlay } from "@/components/loading-overlay"
 import { Toast, useToast } from "@/components/toast-notification"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { signIn } from "@/lib/auth-local"
 
 export default function SignInPage() {
   const router = useRouter()
-  const supabase = createClient()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
@@ -36,33 +35,24 @@ export default function SignInPage() {
     setIsLoading(true)
 
     try {
-      console.log("[v0] Attempting sign in for:", email)
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      console.log("[v0] Sign in response:", { data, error })
+      const { user, error } = await signIn(email, password)
 
       if (error) {
-        console.log("[v0] Sign in error:", error.message)
         showToast("error", error.message)
         setIsLoading(false)
         return
       }
 
-      if (data.user) {
-        console.log("[v0] Sign in successful, user:", data.user.id)
+      if (user) {
         showToast("success", "Successfully signed in! Redirecting to dashboard...")
 
-        // Use window.location for a hard redirect to ensure cookies are set
+        // Use window.location for a hard redirect
         setTimeout(() => {
           window.location.href = "/dashboard"
         }, 1000)
       }
     } catch (err) {
-      console.error("[v0] Sign in error:", err)
+      console.error("Sign in error:", err)
       showToast("error", "Failed to sign in. Please check your credentials.")
       setIsLoading(false)
     }
