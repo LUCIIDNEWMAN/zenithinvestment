@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label"
 import { TrendingUp, DollarSign, Users, ArrowUpRight, ArrowDownRight, Copy, Share2, Plus, Minus, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { isAuthenticated, getUser } from "@/lib/auth-local"
+import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import useSWR from "swr"
 
 interface DashboardData {
   profile: {
@@ -22,10 +23,6 @@ interface DashboardData {
     total_returns: number
     referral_code: string
     referral_earnings: number
-    day_change: number
-    day_change_percent: number
-    total_return_percent: number
-    referral_total_deposits: number
   }
   investments: any[]
   active_investments: any[]
@@ -34,46 +31,55 @@ interface DashboardData {
   referral_earnings: number
 }
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
 export default function DashboardPage() {
   const router = useRouter()
+  const supabase = createClient()
   const [copied, setCopied] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [user, setUser] = useState<any>(null)
-  const [data, setData] = useState<DashboardData | null>(null)
   const [dayChange, setDayChange] = useState(0)
   const [dayChangePercent, setDayChangePercent] = useState(0)
   const [totalReturnPercent, setTotalReturnPercent] = useState(0)
   const [referralTotalDeposits, setReferralTotalDeposits] = useState(0)
   const [recentActivity, setRecentActivity] = useState<any[]>([])
-  const [error, setError] = useState<any | null>(null)
+  const [transactions, setTransactions] = useState<any[]>([])
+
+  // Fetch dashboard data
+  const { data, error, isLoading } = useSWR<DashboardData>("/api/dashboard", fetcher, {
+    refreshInterval: 30000, // Refresh every 30 seconds
+  })
 
   // Check auth on mount
   useEffect(() => {
-    if (!isAuthenticated()) {
-      router.push("/signin")
-    } else {
-      const currentUser = getUser()
-      setUser(currentUser)
-      setIsLoading(false)
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push("/signin")
+      }
     }
-  }, [router])
+    checkAuth()
+  }, [supabase.auth, router])
 
-  // Mock data for dashboard
-  const userName = user?.full_name?.split(" ")[0] || "User"
-  const totalInvestment = 12450.67
-  const totalReturn = 1450.67
-  const balance = 1549.33
-  const referralCount = 12
-  const referralEarnings = 255
-  const referralCode = "ZENITH2024"
+  useEffect(() => {
+    if (data) {
+      setDayChange(data.profile.day_change || 0)
+      setDayChangePercent(data.profile.day_change_percent || 0)
+      setTotalReturnPercent(data.profile.total_return_percent || 0)
+      setReferralTotalDeposits(data.profile.referral_total_deposits || 0)
+      setRecentActivity(data.transactions || [])
+      setTransactions(data.transactions || [])
+    }
+  }, [data])
+
+  const profile = data?.profile
+  const userName = profile?.full_name?.split(" ")[0] || "User"
+  const totalInvestment = profile?.total_invested || 0
+  const totalReturn = profile?.total_returns || 0
+  const balance = profile?.balance || 0
+  const referralCount = data?.referral_count || 0
+  const referralEarnings = data?.referral_earnings || 0
+  const referralCode = profile?.referral_code || ""
   const referralLink = `${typeof window !== "undefined" ? window.location.origin : ""}/signup?ref=${referralCode}`
-  
-  const mockTransactions = [
-    { id: 1, type: "deposit", amount: 500, date: "2024-01-15" },
-    { id: 2, type: "investment", amount: -1000, date: "2024-01-14" },
-    { id: 3, type: "return", amount: 150, date: "2024-01-12" },
-    { id: 4, type: "referral_bonus", amount: 25, date: "2024-01-10" },
-  ]
 
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink)
@@ -262,10 +268,10 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 sm:space-y-3">
-                  {mockTransactions.length === 0 ? (
+                  {transactions.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
                   ) : (
-                    mockTransactions.slice(0, 4).map((tx: any) => (
+                    transactions.slice(0, 4).map((tx: any) => (
                       <div key={tx.id} className="flex items-center justify-between text-xs sm:text-sm gap-2">
                         <div className="flex items-center space-x-2 min-w-0">
                           {tx.type === "deposit" && <ArrowUpRight className="h-3 w-3 text-green-500 flex-shrink-0" />}

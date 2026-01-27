@@ -11,10 +11,11 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { ArrowLeft, Wallet, AlertTriangle, DollarSign, CheckCircle, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { isAuthenticated } from "@/lib/auth-local"
+import { createClient } from "@/lib/supabase/client"
 
 export default function WithdrawPage() {
   const router = useRouter()
+  const supabase = createClient()
   const [withdrawData, setWithdrawData] = useState({
     address: "",
     amount: "",
@@ -22,20 +23,42 @@ export default function WithdrawPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const [currentBalance, setCurrentBalance] = useState(0)
+  const [isLoadingBalance, setIsLoadingBalance] = useState(true)
 
-  const currentBalance = 1549.33
   const minWithdraw = 20
   const maxWithdraw = currentBalance
   const networkFee = 1.5
 
   useEffect(() => {
-    // Check authentication
-    if (!isAuthenticated()) {
-      router.push("/signin")
-    } else {
-      setIsCheckingAuth(false)
+    // Check Supabase authentication and fetch user balance
+    const checkAuthAndFetchBalance = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push("/signin")
+          return
+        }
+
+        // Fetch user balance from API
+        const response = await fetch("/api/user/profile")
+        if (response.ok) {
+          const profileData = await response.json()
+          setCurrentBalance(profileData.balance || 0)
+        } else {
+          console.error("Failed to fetch balance")
+          setCurrentBalance(0)
+        }
+      } catch (error) {
+        console.error("Auth check error:", error)
+        router.push("/signin")
+      } finally {
+        setIsCheckingAuth(false)
+        setIsLoadingBalance(false)
+      }
     }
-  }, [router])
+    checkAuthAndFetchBalance()
+  }, [router, supabase.auth])
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {}
@@ -95,7 +118,7 @@ export default function WithdrawPage() {
     setWithdrawData((prev) => ({ ...prev, amount: maxAmount.toFixed(2) }))
   }
 
-  if (isCheckingAuth) {
+  if (isCheckingAuth || isLoadingBalance) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
