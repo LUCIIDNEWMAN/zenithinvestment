@@ -9,17 +9,21 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { ArrowLeft, Wallet, AlertTriangle, DollarSign, CheckCircle } from "lucide-react"
+import { ArrowLeft, Wallet, AlertTriangle, DollarSign, CheckCircle, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/client"
 
 export default function WithdrawPage() {
   const router = useRouter()
+  const supabase = createClient()
   const [withdrawData, setWithdrawData] = useState({
     address: "",
     amount: "",
   })
-  const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const [errors, setErrors] = useState<{ [key: string]: string }>({})
+  const [isLoading, setIsLoading] = useState(false) // Declare isLoading variable
 
   const currentBalance = 1549.33
   const minWithdraw = 20
@@ -27,12 +31,22 @@ export default function WithdrawPage() {
   const networkFee = 1.5
 
   useEffect(() => {
-    // Redirect if not signed in
-    const isSignedIn = localStorage.getItem("isSignedIn") === "true"
-    if (!isSignedIn) {
-      router.push("/signin")
+    // Check Supabase authentication
+    const checkAuth = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push("/signin")
+        } else {
+          setIsCheckingAuth(false)
+        }
+      } catch (error) {
+        console.error("Auth check error:", error)
+        router.push("/signin")
+      }
     }
-  }, [router])
+    checkAuth()
+  }, [router, supabase.auth])
 
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {}
@@ -63,7 +77,7 @@ export default function WithdrawPage() {
   const handleWithdraw = async () => {
     if (!validateForm()) return
 
-    setIsLoading(true)
+    setIsSubmitting(true)
 
     try {
       // Simulate withdrawal process
@@ -75,7 +89,7 @@ export default function WithdrawPage() {
       console.error("Withdrawal error:", error)
       alert("Withdrawal failed. Please try again.")
     } finally {
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
@@ -90,6 +104,17 @@ export default function WithdrawPage() {
   const setMaxAmount = () => {
     const maxAmount = Math.max(0, currentBalance - networkFee)
     setWithdrawData((prev) => ({ ...prev, amount: maxAmount.toFixed(2) }))
+  }
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center h-[70vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -174,7 +199,7 @@ export default function WithdrawPage() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2"
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-transparent"
                       onClick={setMaxAmount}
                     >
                       Max
@@ -209,10 +234,10 @@ export default function WithdrawPage() {
                 <Button
                   onClick={handleWithdraw}
                   className="w-full"
-                  disabled={!withdrawData.address || !withdrawData.amount || isLoading}
+                  disabled={!withdrawData.address || !withdrawData.amount || isSubmitting}
                   size="lg"
                 >
-                  {isLoading ? "Processing Withdrawal..." : "Withdraw USDT"}
+                  {isSubmitting ? "Processing Withdrawal..." : "Withdraw USDT"}
                 </Button>
               </CardContent>
             </Card>

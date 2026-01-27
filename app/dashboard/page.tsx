@@ -6,32 +6,80 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { TrendingUp, DollarSign, Users, ArrowUpRight, ArrowDownRight, Copy, Share2, Plus, Minus } from "lucide-react"
+import { TrendingUp, DollarSign, Users, ArrowUpRight, ArrowDownRight, Copy, Share2, Plus, Minus, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
+import { createClient } from "@/lib/supabase/client"
+import { useRouter } from "next/navigation"
+import useSWR from "swr"
+
+interface DashboardData {
+  profile: {
+    id: string
+    full_name: string
+    email: string
+    balance: number
+    total_invested: number
+    total_returns: number
+    referral_code: string
+    referral_earnings: number
+  }
+  investments: any[]
+  active_investments: any[]
+  transactions: any[]
+  referral_count: number
+  referral_earnings: number
+}
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export default function DashboardPage() {
-  const [userName, setUserName] = useState("User")
+  const router = useRouter()
+  const supabase = createClient()
+  const [copied, setCopied] = useState(false)
+  const [dayChange, setDayChange] = useState(0)
+  const [dayChangePercent, setDayChangePercent] = useState(0)
+  const [totalReturnPercent, setTotalReturnPercent] = useState(0)
+  const [referralTotalDeposits, setReferralTotalDeposits] = useState(0)
+  const [recentActivity, setRecentActivity] = useState<any[]>([])
+  const [transactions, setTransactions] = useState<any[]>([])
+
+  // Fetch dashboard data
+  const { data, error, isLoading } = useSWR<DashboardData>("/api/dashboard", fetcher, {
+    refreshInterval: 30000, // Refresh every 30 seconds
+  })
+
+  // Check auth on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push("/signin")
+      }
+    }
+    checkAuth()
+  }, [supabase.auth, router])
 
   useEffect(() => {
-    // Get user name from localStorage
-    const storedName = localStorage.getItem("userName")
-    if (storedName) {
-      // Extract first name from full name
-      const firstName = storedName.split(" ")[0]
-      setUserName(firstName)
+    if (data) {
+      setDayChange(data.profile.day_change || 0)
+      setDayChangePercent(data.profile.day_change_percent || 0)
+      setTotalReturnPercent(data.profile.total_return_percent || 0)
+      setReferralTotalDeposits(data.profile.referral_total_deposits || 0)
+      setRecentActivity(data.transactions || [])
+      setTransactions(data.transactions || [])
     }
-  }, [])
-  const [copied, setCopied] = useState(false)
-  const totalInvestment = 12450.67
-  const dayChange = 247.32
-  const dayChangePercent = 2.03
-  const totalReturn = 1450.67
-  const totalReturnPercent = 13.2
-  const referralCount = 12
-  const referralTotalDeposits = 8500 // Total deposits from referred users
-  const referralEarnings = referralTotalDeposits * 0.03 // 3% of referred deposits
-  const referralLink = "https://zenith.com/ref/john-doe-2024"
+  }, [data])
+
+  const profile = data?.profile
+  const userName = profile?.full_name?.split(" ")[0] || "User"
+  const totalInvestment = profile?.total_invested || 0
+  const totalReturn = profile?.total_returns || 0
+  const balance = profile?.balance || 0
+  const referralCount = data?.referral_count || 0
+  const referralEarnings = data?.referral_earnings || 0
+  const referralCode = profile?.referral_code || ""
+  const referralLink = `${typeof window !== "undefined" ? window.location.origin : ""}/signup?ref=${referralCode}`
 
   const copyReferralLink = () => {
     navigator.clipboard.writeText(referralLink)
@@ -39,12 +87,27 @@ export default function DashboardPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const recentActivity = [
-    { type: "buy", symbol: "AAPL", shares: 2, price: 175.43, date: "2024-01-15", time: "10:30 AM" },
-    { type: "sell", symbol: "GOOGL", shares: 1, price: 125.3, date: "2024-01-14", time: "2:15 PM" },
-    { type: "dividend", symbol: "MSFT", amount: 15.6, date: "2024-01-12", time: "9:00 AM" },
-    { type: "referral", name: "Sarah M.", bonus: 25, date: "2024-01-10", time: "11:45 AM" },
-  ]
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center h-[70vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center h-[70vh]">
+          <p className="text-red-500">Failed to load dashboard data</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -109,7 +172,7 @@ export default function DashboardPage() {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-2xl font-bold">$1,549.33</div>
+              <div className="text-xl sm:text-2xl font-bold">${balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
               <p className="text-xs text-muted-foreground">Ready to invest</p>
             </CardContent>
           </Card>
@@ -136,7 +199,7 @@ export default function DashboardPage() {
                     ${referralEarnings.toFixed(2)} earned
                   </div>
                   <div className="text-xs sm:text-sm text-muted-foreground">
-                    3% from ${referralTotalDeposits.toLocaleString()} in referred deposits
+                    3% from ${referralTotalDeposits.toLocaleString()} in total deposits
                   </div>
                 </div>
 
@@ -205,26 +268,27 @@ export default function DashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-2 sm:space-y-3">
-                  {recentActivity.slice(0, 4).map((activity, index) => (
-                    <div key={index} className="flex items-center justify-between text-xs sm:text-sm gap-2">
-                      <div className="flex items-center space-x-2 min-w-0">
-                        {activity.type === "buy" && <ArrowUpRight className="h-3 w-3 text-green-500 flex-shrink-0" />}
-                        {activity.type === "sell" && <ArrowDownRight className="h-3 w-3 text-red-500 flex-shrink-0" />}
-                        {activity.type === "dividend" && <DollarSign className="h-3 w-3 text-blue-500 flex-shrink-0" />}
-                        {activity.type === "referral" && <Users className="h-3 w-3 text-purple-500 flex-shrink-0" />}
-                        <span className="font-medium truncate">
-                          {activity.type === "buy" && "Bought"}
-                          {activity.type === "sell" && "Sold"}
-                          {activity.type === "dividend" && "Dividend"}
-                          {activity.type === "referral" && "Referral"}
-                        </span>
-                        <span className="truncate">
-                          {activity.type === "referral" ? activity.name : activity.symbol}
-                        </span>
+                  {transactions.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">No recent activity</p>
+                  ) : (
+                    transactions.slice(0, 4).map((tx: any) => (
+                      <div key={tx.id} className="flex items-center justify-between text-xs sm:text-sm gap-2">
+                        <div className="flex items-center space-x-2 min-w-0">
+                          {tx.type === "deposit" && <ArrowUpRight className="h-3 w-3 text-green-500 flex-shrink-0" />}
+                          {tx.type === "withdrawal" && <ArrowDownRight className="h-3 w-3 text-red-500 flex-shrink-0" />}
+                          {tx.type === "investment" && <TrendingUp className="h-3 w-3 text-blue-500 flex-shrink-0" />}
+                          {tx.type === "return" && <DollarSign className="h-3 w-3 text-green-500 flex-shrink-0" />}
+                          {tx.type === "referral_bonus" && <Users className="h-3 w-3 text-purple-500 flex-shrink-0" />}
+                          <span className="font-medium truncate capitalize">{tx.type.replace("_", " ")}</span>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <span className={tx.amount >= 0 ? "text-green-500" : "text-red-500"}>
+                            {tx.amount >= 0 ? "+" : ""}${Math.abs(tx.amount).toFixed(2)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="text-right text-muted-foreground flex-shrink-0">{activity.date}</div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </CardContent>
             </Card>
