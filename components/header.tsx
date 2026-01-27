@@ -78,8 +78,9 @@ export function Header() {
     }
 
     if (isSignedIn) {
-      // Authenticated: Markets and Invest only
+      // Authenticated: Dashboard, Markets and Invest
       return [
+        { href: "/dashboard", label: "Dashboard" },
         { href: "/markets", label: "Markets" },
         { href: "/invest", label: "Invest" },
       ]
