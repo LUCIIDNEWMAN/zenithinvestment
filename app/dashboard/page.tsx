@@ -9,9 +9,9 @@ import { Label } from "@/components/ui/label"
 import { TrendingUp, DollarSign, Users, ArrowUpRight, ArrowDownRight, Copy, Share2, Plus, Minus, Loader2 } from "lucide-react"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import useSWR from "swr"
+import { createClient } from "@supabase/supabase-js" // Import the createClient function
 
 interface DashboardData {
   profile: {
@@ -35,7 +35,6 @@ const fetcher = (url: string) => fetch(url).then((res) => res.json())
 
 export default function DashboardPage() {
   const router = useRouter()
-  const supabase = createClient()
   const [copied, setCopied] = useState(false)
   const [dayChange, setDayChange] = useState(0)
   const [dayChangePercent, setDayChangePercent] = useState(0)
@@ -43,6 +42,7 @@ export default function DashboardPage() {
   const [referralTotalDeposits, setReferralTotalDeposits] = useState(0)
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [transactions, setTransactions] = useState<any[]>([])
+  const supabase = createClient("https://your-supabase-url.supabase.co", "your-supabase-key") // Declare the supabase variable with your actual URL and key
 
   // Fetch dashboard data
   const { data, error, isLoading } = useSWR<DashboardData>("/api/dashboard", fetcher, {
@@ -51,14 +51,11 @@ export default function DashboardPage() {
 
   // Check auth on mount
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push("/signin")
-      }
+    const isSignedIn = localStorage.getItem("isSignedIn") === "true"
+    if (!isSignedIn) {
+      router.push("/signin")
     }
-    checkAuth()
-  }, [supabase.auth, router])
+  }, [router])
 
   useEffect(() => {
     if (data) {

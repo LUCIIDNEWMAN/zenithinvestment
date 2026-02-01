@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import { createClient } from '@supabase/supabase-js'
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -15,7 +15,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Menu, TrendingUp, User, Settings, LogOut, Plus, Minus } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+
+const supabaseUrl = 'https://your-supabase-url.supabase.co'
+const supabaseKey = 'your-supabase-key'
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
@@ -23,13 +26,12 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const [currentPath, setCurrentPath] = useState("")
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
-    // Check if user is signed in via Supabase
+    // Check if user is signed in
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setIsSignedIn(!!user)
+      const { data } = await supabase.auth.getUser()
+      setIsSignedIn(!!data.user)
     }
     checkAuth()
 
@@ -50,7 +52,7 @@ export function Header() {
       window.removeEventListener("scroll", handleScroll)
       subscription.unsubscribe()
     }
-  }, [supabase.auth])
+  }, [])
 
   const handleSignOut = async () => {
     await supabase.auth.signOut()

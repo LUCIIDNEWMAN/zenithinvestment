@@ -9,11 +9,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { DollarSign, ArrowLeft, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from "@supabase/supabase-js"
+
+const supabaseUrl = "https://your-supabase-url.supabase.co"
+const supabaseKey = "your-supabase-key"
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 export default function InvestAmountPage() {
   const router = useRouter()
-  const supabase = createClient()
   const [amount, setAmount] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
@@ -54,7 +57,7 @@ export default function InvestAmountPage() {
     }
 
     checkAuth()
-  }, [router, supabase.auth])
+  }, [router])
 
   const handleInvest = async () => {
     const investAmount = Number.parseFloat(amount)

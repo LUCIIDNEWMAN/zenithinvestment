@@ -5,27 +5,21 @@ import { Button } from "@/components/ui/button"
 import { TrendingUp } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
 
 export function InvestmentOptions() {
   const [isSignedIn, setIsSignedIn] = useState(false)
   const [showSignupModal, setShowSignupModal] = useState(false)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
-    const checkAuth = async () => {
-      // Check localStorage first
+    const checkAuth = () => {
+      // Check localStorage
       const signedInLocal = localStorage.getItem("isSignedIn") === "true"
-      
-      // Check Supabase auth as backup
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      setIsSignedIn(signedInLocal || !!user)
+      setIsSignedIn(signedInLocal)
     }
     
     checkAuth()
-  }, [supabase.auth])
+  }, [])
 
   const investmentPlan = {
     title: "Core Investment Portfolio",

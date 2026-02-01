@@ -9,11 +9,14 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Copy, QrCode, ArrowLeft, CheckCircle, AlertTriangle, Wallet, Loader2 } from "lucide-react"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/client"
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = 'https://your-supabase-url.supabase.co'
+const supabaseKey = 'your-supabase-key'
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 export default function DepositPage() {
   const router = useRouter()
-  const supabase = createClient()
   const [copied, setCopied] = useState(false)
   const [showQR, setShowQR] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
@@ -37,7 +40,7 @@ export default function DepositPage() {
       }
     }
     checkAuth()
-  }, [router, supabase.auth])
+  }, [router])
 
   const copyAddress = () => {
     navigator.clipboard.writeText(depositAddress)
