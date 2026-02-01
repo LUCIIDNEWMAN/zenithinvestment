@@ -62,10 +62,11 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (data) {
-      setDayChange(data.profile.day_change || 0)
-      setDayChangePercent(data.profile.day_change_percent || 0)
-      setTotalReturnPercent(data.profile.total_return_percent || 0)
-      setReferralTotalDeposits(data.profile.referral_total_deposits || 0)
+      // Set mock data for display metrics
+      setDayChange(247.32)
+      setDayChangePercent(2.03)
+      setTotalReturnPercent(13.2)
+      setReferralTotalDeposits(8500)
       setRecentActivity(data.transactions || [])
       setTransactions(data.transactions || [])
     }
