@@ -14,9 +14,11 @@ import { LoadingButton } from "@/components/loading-button"
 import { LoadingOverlay } from "@/components/loading-overlay"
 import { Toast, useToast } from "@/components/toast-notification"
 import { useRouter } from "next/navigation"
+import { createClient } from "@/lib/supabase/client"
 
 export default function SignInPage() {
   const router = useRouter()
+  const supabase = createClient()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [email, setEmail] = useState("")
@@ -34,24 +36,40 @@ export default function SignInPage() {
     setIsLoading(true)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000))
-      // Handle sign in logic here
-      console.log("Sign in:", { email, password })
+      console.log("[v0] Attempting sign in for:", email)
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-      // Set signed in state
-      localStorage.setItem("isSignedIn", "true")
-      localStorage.setItem("userEmail", email)
+      console.log("[v0] Sign in response:", { data, error })
 
-      showToast("success", "Successfully signed in! Redirecting to dashboard...")
+      if (error) {
+        console.log("[v0] Sign in error:", error.message)
+        showToast("error", error.message)
+        setIsLoading(false)
+        return
+      }
 
-      setTimeout(() => {
-        router.push("/dashboard")
-      }, 1500)
-    } catch (error) {
-      console.error("Sign in error:", error)
+      if (data.user) {
+        console.log("[v0] Sign in successful, user:", data.user.id)
+        
+        // Set localStorage flags for app auth state
+        localStorage.setItem("isSignedIn", "true")
+        localStorage.setItem("userEmail", data.user.email || "")
+        localStorage.setItem("userId", data.user.id)
+        
+        showToast("success", "Successfully signed in! Redirecting to dashboard...")
+
+        // Use window.location for a hard redirect to ensure cookies are set
+        setTimeout(() => {
+          window.location.href = "/dashboard"
+        }, 1000)
+      }
+    } catch (err) {
+      console.error("[v0] Sign in error:", err)
       showToast("error", "Failed to sign in. Please check your credentials.")
-    } finally {
       setIsLoading(false)
     }
   }

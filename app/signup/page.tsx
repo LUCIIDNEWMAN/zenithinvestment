@@ -12,12 +12,15 @@ import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { Checkbox } from "@/components/ui/checkbox"
 import { TrendingUp, Eye, EyeOff, Loader2 } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 
 export default function SignUpPage() {
   const router = useRouter()
+  const supabase = createClient()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -30,41 +33,68 @@ export default function SignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
 
     if (formData.password.length < 8) {
-      alert("Password must be at least 8 characters long")
+      setError("Password must be at least 8 characters long")
       return
     }
 
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match")
+      setError("Passwords do not match")
       return
     }
 
     setIsLoading(true)
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2500))
-      // Handle sign up logic here
-      console.log("Sign up:", formData)
+      const fullName = `${formData.firstName} ${formData.lastName}`
+      
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
+          data: {
+            full_name: fullName,
+            referral_code: formData.referralCode || null,
+          },
+        },
+      })
 
-      // Set signed in state
-      localStorage.setItem("isSignedIn", "true")
-      localStorage.setItem("userEmail", formData.email)
-      localStorage.setItem("userName", `${formData.firstName} ${formData.lastName}`)
-
-      const redirectAfterSignup = localStorage.getItem("redirectAfterSignup")
-      localStorage.removeItem("redirectAfterSignup")
-
-      // Redirect to invest page if came from investment button, otherwise dashboard
-      if (redirectAfterSignup === "invest-page") {
-        router.push("/invest-amount")
-      } else {
-        router.push("/dashboard")
+      if (signUpError) {
+        setError(signUpError.message)
+        return
       }
-    } catch (error) {
-      console.error("Sign up error:", error)
+
+      if (data.user) {
+        console.log("[v0] Sign up successful, user:", data.user.id)
+        
+        // Set localStorage flags for app auth state
+        localStorage.setItem("isSignedIn", "true")
+        localStorage.setItem("userEmail", data.user.email || "")
+        localStorage.setItem("userName", formData.firstName || "")
+        localStorage.setItem("userId", data.user.id)
+        
+        // Store referral code if provided for the trigger to process
+        if (formData.referralCode) {
+          localStorage.setItem("usedReferralCode", formData.referralCode)
+        }
+
+        const redirectAfterSignup = localStorage.getItem("redirectAfterSignup")
+        localStorage.removeItem("redirectAfterSignup")
+
+        // Use window.location for a hard redirect to ensure cookies are set
+        // Redirect to invest page if came from investment button, otherwise dashboard
+        if (redirectAfterSignup === "invest-page") {
+          window.location.href = "/invest-amount"
+        } else {
+          window.location.href = "/dashboard"
+        }
+      }
+    } catch (err) {
+      console.error("Sign up error:", err)
+      setError("An unexpected error occurred. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -94,6 +124,11 @@ export default function SignUpPage() {
             <CardDescription>Create an account to access your investment dashboard</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {error && (
+              <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">
+                {error}
+              </div>
+            )}
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">

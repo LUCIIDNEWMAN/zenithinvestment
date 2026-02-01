@@ -7,22 +7,56 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { DollarSign, ArrowLeft } from "lucide-react"
+import { DollarSign, ArrowLeft, Loader2 } from "lucide-react"
 import Link from "next/link"
+import { createClient } from "@supabase/supabase-js"
+
+const supabaseUrl = "https://your-supabase-url.supabase.co"
+const supabaseKey = "your-supabase-key"
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 export default function InvestAmountPage() {
   const router = useRouter()
   const [amount, setAmount] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const currentBalance = 1549.33
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
+  const [currentBalance, setCurrentBalance] = useState(1549.33)
   const minInvestment = 20
 
   useEffect(() => {
-    // Redirect if not signed in
-    const isSignedIn = localStorage.getItem("isSignedIn") === "true"
-    if (!isSignedIn) {
-      router.push("/signin")
+    // Check authentication
+    const checkAuth = async () => {
+      try {
+        // First check localStorage
+        const isSignedIn = localStorage.getItem("isSignedIn") === "true"
+        
+        // Then check Supabase auth as backup
+        const { data: { user } } = await supabase.auth.getUser()
+        
+        if (!isSignedIn && !user) {
+          router.push("/signin")
+          return
+        }
+
+        // Fetch user balance from API if available
+        try {
+          const response = await fetch("/api/user/profile")
+          if (response.ok) {
+            const profileData = await response.json()
+            setCurrentBalance(profileData.balance || currentBalance)
+          }
+        } catch (error) {
+          console.log("Could not fetch balance from API, using default")
+        }
+
+        setIsCheckingAuth(false)
+      } catch (error) {
+        console.error("Auth check error:", error)
+        router.push("/signin")
+      }
     }
+
+    checkAuth()
   }, [router])
 
   const handleInvest = async () => {
@@ -52,6 +86,17 @@ export default function InvestAmountPage() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center h-[70vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -107,7 +152,7 @@ export default function InvestAmountPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">${currentBalance.toLocaleString()}</div>
+                <div className="text-3xl font-bold text-green-600">${currentBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
                 <p className="text-sm text-muted-foreground">Ready to invest</p>
               </CardContent>
             </Card>

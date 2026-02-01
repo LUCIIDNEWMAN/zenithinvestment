@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-
+import { createClient } from '@supabase/supabase-js'
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,10 @@ import {
 import { Menu, TrendingUp, User, Settings, LogOut, Plus, Minus } from "lucide-react"
 import { useRouter } from "next/navigation"
 
+const supabaseUrl = 'https://your-supabase-url.supabase.co'
+const supabaseKey = 'your-supabase-key'
+const supabase = createClient(supabaseUrl, supabaseKey)
+
 export function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const [isSignedIn, setIsSignedIn] = useState(false)
@@ -25,8 +29,11 @@ export function Header() {
 
   useEffect(() => {
     // Check if user is signed in
-    const signedIn = localStorage.getItem("isSignedIn") === "true"
-    setIsSignedIn(signedIn)
+    const checkAuth = async () => {
+      const { data } = await supabase.auth.getUser()
+      setIsSignedIn(!!data.user)
+    }
+    checkAuth()
 
     // Get current path
     setCurrentPath(window.location.pathname)
@@ -35,15 +42,23 @@ export function Header() {
       setIsScrolled(window.scrollY > 10)
     }
     window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
+    
+    // Listen for auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setIsSignedIn(!!session?.user)
+    })
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll)
+      subscription.unsubscribe()
+    }
   }, [])
 
-  const handleSignOut = () => {
-    localStorage.removeItem("isSignedIn")
-    localStorage.removeItem("userEmail")
-    localStorage.removeItem("userName")
+  const handleSignOut = async () => {
+    await supabase.auth.signOut()
     setIsSignedIn(false)
     router.push("/")
+    router.refresh()
   }
 
   const handleLogoClick = (e: React.MouseEvent) => {
@@ -65,8 +80,9 @@ export function Header() {
     }
 
     if (isSignedIn) {
-      // Authenticated: Markets and Invest only
+      // Authenticated: Dashboard, Markets and Invest
       return [
+        { href: "/dashboard", label: "Dashboard" },
         { href: "/markets", label: "Markets" },
         { href: "/invest", label: "Invest" },
       ]

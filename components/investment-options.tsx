@@ -12,8 +12,13 @@ export function InvestmentOptions() {
   const router = useRouter()
 
   useEffect(() => {
-    const signedIn = localStorage.getItem("isSignedIn") === "true"
-    setIsSignedIn(signedIn)
+    const checkAuth = () => {
+      // Check localStorage
+      const signedInLocal = localStorage.getItem("isSignedIn") === "true"
+      setIsSignedIn(signedInLocal)
+    }
+    
+    checkAuth()
   }, [])
 
   const investmentPlan = {
