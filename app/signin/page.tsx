@@ -54,6 +54,12 @@ export default function SignInPage() {
 
       if (data.user) {
         console.log("[v0] Sign in successful, user:", data.user.id)
+        
+        // Set localStorage flags for app auth state
+        localStorage.setItem("isSignedIn", "true")
+        localStorage.setItem("userEmail", data.user.email || "")
+        localStorage.setItem("userId", data.user.id)
+        
         showToast("success", "Successfully signed in! Redirecting to dashboard...")
 
         // Use window.location for a hard redirect to ensure cookies are set

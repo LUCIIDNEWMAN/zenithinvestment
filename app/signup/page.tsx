@@ -70,6 +70,12 @@ export default function SignUpPage() {
       if (data.user) {
         console.log("[v0] Sign up successful, user:", data.user.id)
         
+        // Set localStorage flags for app auth state
+        localStorage.setItem("isSignedIn", "true")
+        localStorage.setItem("userEmail", data.user.email || "")
+        localStorage.setItem("userName", formData.firstName || "")
+        localStorage.setItem("userId", data.user.id)
+        
         // Store referral code if provided for the trigger to process
         if (formData.referralCode) {
           localStorage.setItem("usedReferralCode", formData.referralCode)
